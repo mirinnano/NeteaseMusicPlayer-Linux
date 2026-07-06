@@ -13,12 +13,10 @@ jobs:
       image: fedora:latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Install dependencies
         run: |
-          dnf install -y \
+          dnf install -y git \
             meson ninja-build \
             gtk4-devel libadwaita-devel \
             gstreamer1-devel gstreamer1-plugins-base-devel \
