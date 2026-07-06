@@ -8,7 +8,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.10
+    runs-on: ubuntu-24.04
+    container:
+      image: fedora:latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -16,18 +18,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
+          dnf install -y \
             meson ninja-build \
-            libgtk-4-dev libadwaita-1-dev \
-            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-            libgstreamer-plugins-bad1.0-dev \
-            libpango1.0-dev libcairo2-dev libgdk-pixbuf-2.0-dev \
-            libssl-dev libdbus-1-dev \
+            gtk4-devel libadwaita-devel \
+            gstreamer1-devel gstreamer1-plugins-base-devel \
+            gstreamer1-plugins-bad-free-devel \
+            pango-devel cairo-gobject-devel gdk-pixbuf2-devel \
+            openssl-devel dbus-devel \
             gettext \
-            rustc cargo \
-            librest-dev libjson-glib-dev \
-            desktop-file-utils
+            rust cargo \
+            librest-devel json-glib-devel \
+            desktop-file-utils \
+            glib2-devel
 
       - name: Build
         run: |
