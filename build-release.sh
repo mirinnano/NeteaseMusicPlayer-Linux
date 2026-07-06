@@ -13,12 +13,10 @@ DESTDIR="${DIST_DIR}/install"
 
 rm -rf "${DIST_DIR}"
 mkdir -p "${DESTDIR}" "${DIST_DIR}"
-
-# 1. meson setup
 meson setup "${BUILD_DIR}" \
     --buildtype=release \
-    --prefix=/usr/local \
-    -Dlibav=false
+    --prefix=/usr/local
+
 
 # 2. ninja build
 ninja -C "${BUILD_DIR}"
