@@ -1,6 +1,6 @@
 # NeteaseMusicPlayer-Linux
 
-[![Build](https://github.com/mirinnano/netease-cloud-music-gtk/actions/workflows/release.yml/badge.svg)](https://github.com/mirinnano/netease-cloud-music-gtk/actions/workflows/release.yml)
+[![Build](https://github.com/mirinnano/NeteaseMusicPlayer-Linux/actions/workflows/release.yml/badge.svg)](https://github.com/mirinnano/NeteaseMusicPlayer-Linux/actions/workflows/release.yml)
 
 A GTK4 / libadwaita music player for the Netease Cloud Music API.  
 Fork of [gmg137/netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk) with:
@@ -43,7 +43,7 @@ Fork of [gmg137/netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud
 ### Build
 
 ```bash
-git clone https://github.com/mirinnano/netease-cloud-music-gtk.git
+git clone https://github.com/mirinnano/NeteaseMusicPlayer-Linux.git
 cd netease-cloud-music-gtk
 
 meson setup build --buildtype=release
@@ -84,12 +84,12 @@ Or toggle in Preferences → Discord RPC.
 
 ## Download
 
-Pre-built binaries are available from [Releases](https://github.com/mirinnano/netease-cloud-music-gtk/releases).
+Pre-built binaries are available from [Releases](https://github.com/mirinnano/NeteaseMusicPlayer-Linux/releases).
 
 ```bash
 # Download the latest tarball
 curl -L -o netease-cloud-music-gtk4.tar.gz \
-  https://github.com/mirinnano/netease-cloud-music-gtk/releases/latest/download/netease-cloud-music-gtk4-x86_64.tar.gz
+  https://github.com/mirinnano/NeteaseMusicPlayer-Linux/releases/latest/download/netease-cloud-music-gtk4-x86_64.tar.gz
 
 # Extract and run
 tar xzf netease-cloud-music-gtk4.tar.gz
