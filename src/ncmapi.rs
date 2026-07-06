@@ -301,6 +301,88 @@ impl NcmClient {
             Ok(lt)
         }
     }
+
+    /// Get original lyrics only (without translations)
+    pub async fn get_original_lyrics(&self, si: SongInfo) -> Result<Vec<(u64, String)>> {
+        // 歌词文件位置
+        let mut lyric_path = LYRICS.clone();
+        lyric_path.push(format!(
+            "{}-{}-{}.lrc",
+            si.name.replace('/', "／"),
+            si.singer,
+            si.album
+        ));
+        let re = regex::Regex::new(r"\[\d+:\d+.\d+\]").unwrap();
+        let re_abnormal_ts = regex::Regex::new(r"^\[(\d+):(\d+):(\d+)\]").unwrap();
+        // Filter metadata lines like "作词 : xxx", "作曲 : xxx", "编曲 : xxx"
+        let re_metadata = regex::Regex::new(r"^\s*(作词|作詞|作曲|编曲|編曲)\s*:").unwrap();
+        
+        if !lyric_path.exists() {
+            if let Ok(lyr) = self.client.song_lyric(si.id).await {
+                // Save original lyrics
+                let lyric = lyr
+                    .lyric
+                    .iter()
+                    .map(|x| re_abnormal_ts.replace_all(x, "[$1:$2.$3]").to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                fs::write(&lyric_path, lyric)?;
+                
+                // Save translations separately
+                if !lyr.tlyric.is_empty() {
+                    let mut tlyric_path = LYRICS.clone();
+                    tlyric_path.push(format!("{}.tlrc", si.id));
+                    let tlyric = lyr
+                        .tlyric
+                        .iter()
+                        .map(|x| re_abnormal_ts.replace_all(x, "[$1:$2.$3]").to_string())
+                        .collect::<Vec<String>>()
+                        .join("\n");
+                    fs::write(&tlyric_path, tlyric)?;
+                }
+                
+                // Return original lyrics only
+                let mut lt = Vec::new();
+                for l in lyr.lyric.iter() {
+                    if l.len() >= 10 && re.is_match(l) {
+                        let time = (l[1..3].parse::<u64>().unwrap() * 60
+                            + l[4..6].parse::<u64>().unwrap())
+                            * 1000
+                            + l[7..9].parse::<u64>().unwrap_or(0) * 10;
+                        let nl = re.replace_all(l, "").to_string();
+                        if re_metadata.is_match(&nl) {
+                            continue;
+                        }
+                        lt.push((time, nl));
+                    }
+                }
+                Ok(lt)
+            } else {
+                anyhow::bail!("No lyrics found!")
+            }
+        } else {
+            // Read from file (original lyrics only)
+            let lyric = fs::read_to_string(&lyric_path)?;
+            let lyrics: Vec<String> = lyric
+                .split('\n')
+                .map(|s| s.to_string())
+                .collect();
+            let mut lt = Vec::new();
+            for l in lyrics.iter() {
+                if l.len() >= 10 && re.is_match(l) {
+                    let time = (l[1..3].parse::<u64>().unwrap() * 60 + l[4..6].parse::<u64>().unwrap())
+                        * 1000
+                        + l[7..9].parse::<u64>().unwrap_or(0) * 10;
+                    let nl = re.replace_all(l, "").to_string();
+                    if re_metadata.is_match(&nl) {
+                        continue;
+                    }
+                    lt.push((time, nl));
+                }
+            }
+            Ok(lt)
+        }
+    }
 }
 
 impl Default for NcmClient {

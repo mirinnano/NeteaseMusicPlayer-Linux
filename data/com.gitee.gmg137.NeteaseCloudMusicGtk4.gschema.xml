@@ -56,5 +56,9 @@
             <default>false</default>
             <summary>Desktop Lyrics</summary>
         </key>
+        <key name="discord-rpc" type="b">
+            <default>false</default>
+            <summary>Enable Discord Rich Presence</summary>
+        </key>
     </schema>
 </schemalist>

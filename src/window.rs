@@ -1,6 +1,6 @@
 use crate::{
     application::{Action, NeteaseCloudMusicGtk4Application},
-    audio::MprisController,
+    audio::{DiscordRpcController, MprisController},
     gui::*,
     model::*,
     ncmapi::NcmClient,
@@ -66,6 +66,8 @@ mod imp {
         pub player_revealer: TemplateChild<Revealer>,
         #[template_child]
         pub player_controls: TemplateChild<PlayerControls>,
+        #[template_child]
+        pub now_playing_view: TemplateChild<NowPlayingView>,
         #[template_child]
         pub toplist: TemplateChild<TopListView>,
         #[template_child]
@@ -517,12 +519,39 @@ impl NeteaseCloudMusicGtk4Window {
     }
 
     pub fn play(&self, song_info: SongInfo) {
-        let player_controls = self.imp().player_controls.get();
-        player_controls.set_property("like", self.imp().user_like_song_contains(&song_info.id));
-        player_controls.play(song_info);
+        let imp = self.imp();
+        let player_controls = imp.player_controls.get();
+        player_controls.set_property("like", imp.user_like_song_contains(&song_info.id));
+        player_controls.play(song_info.clone());
+
+        let view = imp.now_playing_view.get();
+        view.update_song(&song_info.name, &song_info.singer, song_info.album_id, &song_info.pic_url);
+
+        view.set_playing(true);
+
         self.show_player_bar();
     }
 
+
+    pub fn show_now_playing_view(&self) {
+        let imp = self.imp();
+        let player_controls = imp.player_controls.get();
+        if let Some(song_info) = player_controls.get_current_song() {
+            let view = imp.now_playing_view.get();
+            view.update_song(&song_info.name, &song_info.singer, song_info.album_id, &song_info.pic_url);
+
+            view.set_playing(player_controls.is_playing());
+
+            imp.base_stack.set_visible_child_name("now_playing");
+        }
+    }
+
+    pub fn close_now_playing_view(&self) {
+        self.imp().base_stack.set_visible_child_name("adw_stack_page");
+    }
+
+    fn update_now_playing_progress(&self, _position_us: u64) {
+    }
     pub fn init_page_data(&self) {
         let imp = self.imp();
         let sender = imp.sender.get().unwrap();
@@ -534,6 +563,10 @@ impl NeteaseCloudMusicGtk4Window {
         // 初始化播放栏
         let player_controls = imp.player_controls.get();
         player_controls.set_sender(sender.clone());
+
+        // 初始化正在播放视图
+        let now_playing_view = imp.now_playing_view.get();
+        now_playing_view.set_sender(sender.clone());
 
         // 恢复播放列表UI（如果有保存的播放列表）
         if player_controls.restore_playlist_ui() {
@@ -618,7 +651,7 @@ impl NeteaseCloudMusicGtk4Window {
         let stack = imp.page_stack.get().unwrap();
         if stack.len() > 1 {
             let top_page = stack.top_page();
-            if top_page.title().unwrap() == title {
+            if top_page.title().unwrap_or_default() == title {
                 if let Some(n) = top_page.name() {
                     if n == name {
                         return;
@@ -644,7 +677,7 @@ impl NeteaseCloudMusicGtk4Window {
 
         if stack.len() > 1 {
             let top_page = stack.top_page();
-            self.page_set_info(top_page.title().unwrap().to_string().as_str());
+            self.page_set_info(top_page.title().unwrap_or_default().to_string().as_str());
             self.page_widget_switch(true);
         } else {
             self.page_widget_switch(false);
@@ -752,7 +785,8 @@ impl NeteaseCloudMusicGtk4Window {
     pub fn update_lyrics(&self, lrc: Vec<(u64, String)>) {
         let imp = self.imp();
         let page = imp.playlist_lyrics_page.get().unwrap();
-        page.update_lyrics(lrc);
+        page.update_lyrics(lrc.clone());
+        imp.now_playing_view.get().update_lyrics(lrc);
     }
 
     // 强行更新歌词区文字，用于显示歌词加载提示
@@ -769,6 +803,7 @@ impl NeteaseCloudMusicGtk4Window {
         if self.page_cur_playlist_lyrics_page() {
             page.update_lyrics_highlight(time);
         }
+        imp.now_playing_view.get().update_lyrics_highlight(time);
     }
 
     pub fn update_playlist_status(&self, index: usize) {
@@ -789,6 +824,7 @@ impl NeteaseCloudMusicGtk4Window {
         self.imp().player_controls.get().gst_state_changed(state);
         use gstreamer_play::PlayState;
         let is_playing = matches!(state, PlayState::Playing);
+        self.imp().now_playing_view.get().set_playing(is_playing);
         self.update_tray_playing(is_playing);
     }
     pub fn gst_volume_changed(&self, volume: f64) {
@@ -802,12 +838,29 @@ impl NeteaseCloudMusicGtk4Window {
     }
     pub fn scale_seek_update(&self, sec: u64) {
         self.imp().player_controls.get().scale_seek_update(sec);
+        self.update_now_playing_progress(sec);
     }
     pub fn scale_value_update(&self) {
         self.imp().player_controls.get().scale_value_update();
     }
     pub fn init_mpris(&self, mpris: MprisController) {
         self.imp().player_controls.get().init_mpris(mpris);
+    }
+    pub fn init_discord_rpc(&self, discord_rpc: DiscordRpcController) {
+        self.imp().player_controls.get().init_discord_rpc(discord_rpc);
+    }
+    pub fn set_discord_rpc_lyrics(&self, lyrics: Vec<(u64, String)>) {
+        self.imp()
+            .player_controls
+            .get()
+            .set_discord_rpc_lyrics(lyrics);
+    }
+
+    pub fn update_discord_rpc_lyric(&self) {
+        self.imp()
+            .player_controls
+            .get()
+            .update_discord_rpc_lyric();
     }
 
     pub fn update_tray_playing(&self, playing: bool) {

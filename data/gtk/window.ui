@@ -74,7 +74,9 @@
                                                 <child>
                                                     <object class="GtkSearchEntry" id="search_entry">
                                                         <property name="focusable">True</property>
-                                                        <property name="halign">center</property>
+                                                        <property name="halign">fill</property>
+                                                        <property name="hexpand">True</property>
+                                                        <property name="max-width-chars">50</property>
                                                         <signal name="activate" handler="search_entry_cb" swapped="true" />
                                                     </object>
                                                 </child>
@@ -214,6 +216,15 @@
                                                             </object>
                                                         </child>
                                                     </object>
+                                                </property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkStackPage">
+                                                <property name="name">now_playing</property>
+                                                <property name="visible">False</property>
+                                                <property name="child">
+                                                    <object class="NowPlayingView" id="now_playing_view" />
                                                 </property>
                                             </object>
                                         </child>

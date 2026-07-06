@@ -1,0 +1,135 @@
+/*
+ * now-playing.css
+ * Apple Music-inspired now playing view
+ * Uses libadwaita system colors for automatic dark theme support
+ */
+
+/* ─── Background layer ─── */
+.now-playing-background {
+    opacity: 0.28;
+}
+
+/* ─── Header ─── */
+.now-playing-title {
+    font-weight: 600;
+    opacity: 0.85;
+    letter-spacing: 0.2px;
+}
+
+#back_button {
+    min-width: 36px;
+    min-height: 36px;
+    opacity: 0.8;
+    transition: opacity 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+#back_button:hover {
+    opacity: 1.0;
+}
+
+/* ─── Art column ─── */
+.art-column {
+    min-width: 280px;
+}
+
+/* Album art — Apple Music radius, deep diffuse shadow */
+.album-art {
+    border-radius: 12px;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.12),
+        0 12px 40px rgba(0, 0, 0, 0.28),
+        0 28px 64px rgba(0, 0, 0, 0.18);
+}
+
+/* ─── Song info ─── */
+#song_title_label {
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: @theme_fg_color;
+}
+
+#artist_label {
+    font-weight: 400;
+    opacity: 0.6;
+    color: @theme_fg_color;
+    letter-spacing: 0.1px;
+}
+
+/* ─── Progress bar — Apple Music thin-line style ─── */
+.progress-row {
+    margin-top: 4px;
+}
+
+#progress_scale {
+    min-height: 3px;
+}
+
+#progress_scale trough {
+    min-height: 3px;
+    border-radius: 1.5px;
+    background: alpha(@theme_fg_color, 0.12);
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+#progress_scale highlight {
+    min-height: 3px;
+    border-radius: 1.5px;
+    background: @accent_color;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+#progress_scale slider {
+    min-height: 12px;
+    min-width: 12px;
+    border-radius: 50%;
+    background: @accent_color;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Time labels ─── */
+#current_time_label,
+#duration_label {
+    font-size: 10.5pt;
+    font-weight: 500;
+    opacity: 0.55;
+    min-width: 38px;
+    font-variant-numeric: tabular-nums;
+    color: @theme_fg_color;
+}
+
+/* ─── Lyrics area ─── */
+.lyrics-area {
+    min-width: 280px;
+}
+
+/* Lyrics lines — base state (upcoming) */
+.lyric-line {
+    font-size: 15pt;
+    opacity: 0.35;
+    transition: opacity 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    padding: 4px 2px;
+    font-weight: 400;
+    letter-spacing: 0.1px;
+    line-height: 1.45;
+    color: @theme_fg_color;
+}
+
+/* Past lyrics — very dim */
+.lyric-line-past {
+    opacity: 0.18;
+    transition: opacity 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Active lyric — bold, full opacity, slightly larger */
+.lyric-line-active {
+    font-size: 18pt;
+    opacity: 1.0;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+    transition: opacity 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    color: @theme_fg_color;
+}

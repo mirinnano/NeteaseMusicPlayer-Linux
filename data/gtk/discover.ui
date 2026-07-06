@@ -16,7 +16,7 @@
                         <property name="margin-top">13</property>
                         <property name="halign">center</property>
                         <property name="valign">fill</property>
-                        <property name="height-request">283</property>
+                        <property name="height-request">350</property>
                         <property name="vexpand">true</property>
                         <child>
                             <object class="AdwCarousel" id="carousel">

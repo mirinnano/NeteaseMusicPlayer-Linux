@@ -309,7 +309,7 @@ impl PlayList {
 
     pub fn set_loops(&mut self, loops: LoopsState) {
         if let LoopsState::Shuffle = loops {
-            if self.play_state {
+            if self.play_state && self.position < self.list.len() {
                 let first = self.list.remove(self.position);
                 let mut list = self.list.clone();
                 fastrand::shuffle(&mut list);

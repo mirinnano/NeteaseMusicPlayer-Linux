@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <requires lib="gtk" version="4.0" />
+    <requires lib="libadwaita" version="1.0" />
+    <template class="NowPlayingView" parent="AdwBin">
+        <property name="child">
+            <object class="GtkOverlay">
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <!-- Blurred background layer -->
+                <child>
+                    <object class="GtkPicture" id="background_picture">
+                        <property name="content-fit">cover</property>
+                        <property name="opacity">0.30</property>
+                        <style>
+                            <class name="now-playing-background"/>
+                        </style>
+                    </object>
+                </child>
+                <child type="overlay">
+                    <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="halign">fill</property>
+                        <property name="valign">fill</property>
+                        <!-- Header bar -->
+                        <child>
+                            <object class="GtkBox">
+                                <property name="spacing">12</property>
+                                <property name="margin-start">20</property>
+                                <property name="margin-end">20</property>
+                                <property name="margin-top">12</property>
+                                <property name="margin-bottom">4</property>
+                                <child>
+                                    <object class="GtkButton" id="back_button">
+                                        <property name="icon-name">go-previous-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Back</property>
+                                        <style>
+                                            <class name="circular" />
+                                            <class name="flat" />
+                                        </style>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Now Playing</property>
+                                        <property name="halign">start</property>
+                                        <property name="valign">center</property>
+                                        <style>
+                                            <class name="title-3" />
+                                            <class name="now-playing-title" />
+                                        </style>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                        <!-- Center content with responsive layout -->
+                        <child>
+                            <object class="AdwBreakpointBin">
+                                <property name="hexpand">True</property>
+                                <property name="vexpand">True</property>
+                                <property name="child">
+                                    <object class="GtkBox" id="center_content_box">
+                                        <property name="orientation">horizontal</property>
+                                        <property name="spacing">48</property>
+                                        <property name="halign">fill</property>
+                                        <property name="valign">center</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="vexpand">True</property>
+                                        <property name="margin-start">48</property>
+                                        <property name="margin-end">48</property>
+                                        <property name="margin-top">16</property>
+                                        <property name="margin-bottom">24</property>
+                                        <child>
+                                            <!-- Album art + song info + progress -->
+                                            <object class="GtkBox" id="art_column">
+                                                <property name="orientation">vertical</property>
+                                                <property name="spacing">20</property>
+                                                <property name="halign">center</property>
+                                                <property name="valign">center</property>
+                                                <property name="hexpand">True</property>
+                                                <style>
+                                                    <class name="art-column"/>
+                                                </style>
+                                                <child>
+                                                    <object class="GtkBox">
+                                                        <property name="halign">center</property>
+                                                        <style>
+                                                            <class name="album-art-container"/>
+                                                        </style>
+                                                        <child>
+                                                            <object class="GtkPicture" id="album_art_picture">
+                                                                <property name="content-fit">cover</property>
+                                                                <property name="halign">center</property>
+                                                                <property name="width-request">320</property>
+                                                                <property name="height-request">320</property>
+                                                                <property name="valign">center</property>
+                                                                <style>
+                                                                    <class name="album-art"/>
+                                                                </style>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="GtkBox">
+                                                        <property name="orientation">vertical</property>
+                                                        <property name="halign">center</property>
+                                                        <property name="spacing">4</property>
+                                                        <child>
+                                                            <object class="GtkLabel" id="song_title_label">
+                                                                <property name="label" translatable="yes">曲名</property>
+                                                                <property name="single-line-mode">True</property>
+                                                                <property name="ellipsize">end</property>
+                                                                <property name="max-width-chars">36</property>
+                                                                <property name="halign">center</property>
+                                                                <style>
+                                                                    <class name="title-1" />
+                                                                </style>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="GtkLabel" id="artist_label">
+                                                                <property name="label" translatable="yes">アーティスト</property>
+                                                                <property name="single-line-mode">True</property>
+                                                                <property name="ellipsize">end</property>
+                                                                <property name="max-width-chars">36</property>
+                                                                <property name="halign">center</property>
+                                                                <style>
+                                                                    <class name="body" />
+                                                                </style>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <!-- Lyrics area -->
+                                            <object class="GtkScrolledWindow" id="lyrics_scroll">
+                                                <property name="hscrollbar-policy">never</property>
+                                                <property name="propagate-natural-height">True</property>
+                                                <property name="hexpand">True</property>
+                                                <property name="vexpand">True</property>
+                                                <style>
+                                                    <class name="lyrics-area"/>
+                                                </style>
+                                                <child>
+                                                    <object class="GtkViewport">
+                                                        <property name="scroll-to-focus">True</property>
+                                                        <child>
+                                                            <object class="GtkBox" id="lyrics_container">
+                                                                <property name="orientation">vertical</property>
+                                                                <property name="spacing">8</property>
+                                                                <property name="valign">start</property>
+                                                                <property name="margin-top">60</property>
+                                                                <property name="margin-bottom">60</property>
+                                                                <property name="margin-start">8</property>
+                                                                <property name="margin-end">8</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
+                                <child>
+                                    <object class="AdwBreakpoint">
+                                        <condition>max-width: 900sp</condition>
+                                        <setter object="center_content_box" property="orientation">vertical</setter>
+                                        <setter object="center_content_box" property="spacing">24</setter>
+                                        <setter object="center_content_box" property="margin-start">24</setter>
+                                        <setter object="center_content_box" property="margin-end">24</setter>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </property>
+    </template>
+</interface>

@@ -13,8 +13,9 @@ use once_cell::sync::OnceCell;
 use std::{cell::RefCell, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use crate::{
-    MAINCONTEXT, NeteaseCloudMusicGtk4Window, audio::MprisController, config::VERSION,
-    gui::NeteaseCloudMusicGtk4Preferences, model::*, ncmapi::*, path::CACHE, utils::*,
+    MAINCONTEXT, NeteaseCloudMusicGtk4Window, audio::{DiscordRpcController, MprisController}, config::VERSION,
+    gui::NeteaseCloudMusicGtk4Preferences,
+    model::*, ncmapi::NcmClient, path::CACHE, utils::gettext_f,
 };
 
 // implements Debug for Fn(Targ) using "blanket implementations"
@@ -50,6 +51,9 @@ pub enum Action {
     // play
     AddPlay(SongInfo),
     PlayNextSong,
+    ShowNowPlayingView,
+    CloseNowPlayingView,
+
     PlayPreviousSong,
     Play(SongInfo),
     PlayStart(SongInfo),
@@ -124,8 +128,10 @@ pub enum Action {
     GstCacheDownloadComplete(String),
     ScaleSeekUpdate(u64),
     ScaleValueUpdate,
+    SeekTo(u64),
 
     InitMpris(MprisController),
+    InitDiscordRpc(DiscordRpcController),
 
     Quit,
 
@@ -691,6 +697,13 @@ impl NeteaseCloudMusicGtk4Application {
             Action::PlayNextSong => {
                 window.play_next();
             }
+            Action::ShowNowPlayingView => {
+                window.show_now_playing_view();
+            }
+            Action::CloseNowPlayingView => {
+                window.close_now_playing_view();
+            }
+
             Action::PlayPreviousSong => {
                 window.play_prev();
             }
@@ -758,13 +771,10 @@ impl NeteaseCloudMusicGtk4Application {
                 }
             }
             Action::PlayStart(song_info) => {
-                // 启用桌面歌词
-                if window.settings().boolean("desktop-lyrics") {
-                    let sender = imp.sender.clone();
-                    sender
-                        .send_blocking(Action::UpdateLyrics(song_info.to_owned(), 0))
-                        .unwrap();
-                };
+                let sender = imp.sender.clone();
+                sender
+                    .send_blocking(Action::UpdateLyrics(song_info.to_owned(), 0))
+                    .unwrap();
                 debug!("播放歌曲: {:?}", song_info);
 
                 let sender = imp.sender.clone();
@@ -1298,6 +1308,16 @@ impl NeteaseCloudMusicGtk4Application {
                     if time == 0 {
                         // 当新曲目播放时，写入歌词内容
                         window.update_lyrics_text(&gettext("Loading lyrics..."));
+                        // Get original lyrics for Discord RPC (without translations)
+                        match ncmapi.get_original_lyrics(si.clone()).await {
+                            Ok(lrc) => {
+                                debug!("获取原始歌词：{:?}", lrc);
+                                // Pass original lyrics to Discord RPC
+                                window.set_discord_rpc_lyrics(lrc);
+                            }
+                            Err(e) => debug!("获取原始歌词失败: {}", e),
+                        }
+                        // Get lyrics with translations for UI display
                         match ncmapi.get_lyrics(si).await {
                             Ok(lrc) => {
                                 debug!("获取歌词：{:?}", lrc);
@@ -1308,6 +1328,8 @@ impl NeteaseCloudMusicGtk4Application {
                     }
                     // 更新歌词高亮位置
                     window.update_lyrics_timestamp(time);
+                    // Update Discord RPC to show current lyric
+                    window.update_discord_rpc_lyric();
                 });
             }
             Action::UpdatePlayListStatus(index) => {
@@ -1336,12 +1358,20 @@ impl NeteaseCloudMusicGtk4Application {
             Action::ScaleValueUpdate => {
                 window.scale_value_update();
             }
+            Action::SeekTo(pos) => {
+                let pc = window.imp().player_controls.get();
+                pc.set_property("scale-value", pos as f64);
+                pc.scale_value_update();
+            }
 
             Action::PageBack => {
                 window.page_back();
             }
             Action::InitMpris(mpris) => {
                 window.init_mpris(mpris);
+            }
+            Action::InitDiscordRpc(discord_rpc) => {
+                window.init_discord_rpc(discord_rpc);
             }
             Action::UpdateTrayPlaying(playing) => {
                 window.update_tray_playing(playing);

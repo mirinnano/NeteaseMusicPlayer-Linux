@@ -4,8 +4,11 @@
 // Distributed under terms of the GPL-3.0-or-later license.
 //
 
+mod discord_rpc;
 mod mpris;
 mod playlist;
+
+pub use discord_rpc::*;
 
 pub use mpris::*;
 pub use playlist::*;

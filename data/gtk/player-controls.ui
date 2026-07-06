@@ -69,6 +69,19 @@
             </object>
         </child>
         <child>
+            <object class="GtkButton" id="now_playing_button">
+                <property name="halign">fill</property>
+                <property name="valign">center</property>
+                <property name="icon-name">view-fullscreen-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Now Playing</property>
+                <signal name="clicked" handler="now_playing_clicked_cb" swapped="true" />
+                <style>
+                    <class name="circular" />
+                    <class name="flat" />
+                </style>
+            </object>
+        </child>
+        <child>
             <object class="GtkBox">
                 <property name="valign">center</property>
                 <property name="orientation">vertical</property>

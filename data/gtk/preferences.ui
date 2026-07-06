@@ -117,6 +117,20 @@
                                 </child>
                             </object>
                         </child>
+        <child>
+            <object class="AdwActionRow">
+                <property name="title" translatable="yes">Discord Rich Presence</property>
+                <property name="subtitle" translatable="yes">Show currently playing song in Discord status</property>
+                <property name="use_underline">True</property>
+                <property name="activatable-widget">discord_rpc_switch</property>
+                <child>
+                    <object class="GtkSwitch" id="discord_rpc_switch">
+                        <property name="valign">center</property>
+                        <property name="active">False</property>
+                    </object>
+                </child>
+            </object>
+        </child>
                     </object>
                 </child>
             </object>

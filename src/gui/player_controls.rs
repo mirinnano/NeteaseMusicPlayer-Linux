@@ -44,6 +44,7 @@ impl PlayerControls {
         self.connect_gst_signals();
         self.bind_click();
         self.setup_mpris();
+        self.setup_discord_rpc();
     }
 
     fn setup_settings(&self) {
@@ -111,6 +112,67 @@ impl PlayerControls {
                             }
                         ),
                     );
+                    if let Some(discord_rpc) = imp.discord_rpc.get() {
+                        discord_rpc.clear_activity();
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn setup_discord_rpc(&self) {
+        let settings = self.settings();
+        if !settings.boolean("discord-rpc") {
+            return;
+        }
+        let sender = self.imp().sender.get().unwrap().clone();
+        if let Some(controller) = DiscordRpcController::new() {
+            let _ = sender.send_blocking(Action::InitDiscordRpc(controller));
+        }
+    }
+
+    pub fn init_discord_rpc(&self, discord_rpc: DiscordRpcController) {
+        self.imp()
+            .discord_rpc
+            .set(Rc::new(discord_rpc))
+            .expect("Discord RPC already initialized");
+
+        // If a song is already loaded, push initial state and fetch lyrics
+        if let Some(song_info) = self.get_current_song() {
+            let duration_secs = song_info.duration / 1000;
+            let position_secs = self.get_live_position() / 1_000_000;
+            self.imp()
+                .discord_rpc
+                .get()
+                .unwrap()
+                .update_activity(&song_info, duration_secs, position_secs, true);
+
+            // Trigger lyrics fetch for Discord RPC after current action completes
+            let sender = self.imp().sender.get().unwrap().clone();
+            let song_info_clone = song_info.clone();
+            glib::idle_add_local_once(move || {
+                debug!("[DiscordRPC] Triggering lyrics fetch for {}", song_info_clone.name);
+                if let Err(e) = sender.send_blocking(Action::UpdateLyrics(song_info_clone, 0)) {
+                    warn!("[DiscordRPC] Failed to send UpdateLyrics: {e}");
+                }
+            });
+        }
+    }
+
+    pub fn set_discord_rpc_lyrics(&self, lyrics: Vec<(u64, String)>) {
+        if let Some(discord_rpc) = self.imp().discord_rpc.get() {
+            discord_rpc.set_lyrics(lyrics);
+        }
+    }
+
+    pub fn update_discord_rpc_lyric(&self) {
+        if let Some(discord_rpc) = self.imp().discord_rpc.get() {
+            if let Some(_song_info) = self.get_current_song() {
+                let position_us = self.get_live_position();
+                let position_ms = position_us / 1000;
+                let current_lyric = discord_rpc.find_current_lyric(position_ms);
+                if let Some(lyric) = current_lyric {
+                    discord_rpc.update_lyric(lyric);
                 }
             }
         }
@@ -219,6 +281,11 @@ impl PlayerControls {
         artist_label.set_label(&song_info.singer);
 
         let volume = self.property("volume");
+        if let Some(discord_rpc) = imp.discord_rpc.get() {
+            discord_rpc.clear_lyrics();
+            let duration_secs = song_info.duration / 1000;
+            discord_rpc.update_activity(&song_info, duration_secs, 0, self.is_playing());
+        }
         if let Some(mpris) = imp.mpris.get() {
             crate::MAINCONTEXT.spawn_local_with_priority(
                 Priority::LOW,
@@ -427,6 +494,13 @@ impl PlayerControls {
                 );
             }
         }
+        if let Some(discord_rpc) = imp.discord_rpc.get() {
+            if let Some(song_info) = self.get_current_song() {
+                let duration_secs = song_info.duration / 1000;
+                let position_secs = self.get_live_position() / 1_000_000;
+                discord_rpc.update_activity(&song_info, duration_secs, position_secs, self.is_playing());
+            }
+        }
     }
 
     pub fn gst_state_changed(&self, state: PlayState) {
@@ -632,6 +706,24 @@ impl PlayerControls {
         }
     }
 
+    /// Returns the real-time playback position from GStreamer (microseconds).
+    pub fn get_live_position(&self) -> u64 {
+        if let Some(player) = self.imp().player.get() {
+            if let Some(pos) = player.position() {
+                return pos.useconds();
+            }
+        }
+        self.get_play_position()
+    }
+
+    pub fn is_playing(&self) -> bool {
+        if let Ok(playlist) = self.imp().playlist.lock() {
+            playlist.get_play_state()
+        } else {
+            false
+        }
+    }
+
     pub fn get_next_song(&self) -> Option<SongInfo> {
         if let Ok(mut playlist) = self.imp().playlist.lock() {
             return playlist.get_next_song().map(|s| s.to_owned());
@@ -739,6 +831,9 @@ impl PlayerControls {
                 ),
             );
         }
+        if let Some(discord_rpc) = imp.discord_rpc.get() {
+            discord_rpc.set_playing(true, self.get_live_position() / 1_000_000);
+        }
     }
 
     pub fn switch_pause(&self) {
@@ -760,6 +855,9 @@ impl PlayerControls {
                 ),
             );
         }
+        if let Some(discord_rpc) = imp.discord_rpc.get() {
+            discord_rpc.set_playing(false, self.get_live_position() / 1_000_000);
+        }
     }
 
     pub fn switch_stop(&self) {
@@ -780,6 +878,9 @@ impl PlayerControls {
                     }
                 ),
             );
+        }
+        if let Some(discord_rpc) = imp.discord_rpc.get() {
+            discord_rpc.clear_activity();
         }
     }
 
@@ -912,15 +1013,11 @@ impl PlayerControls {
             if songinfo.album_id != 0 {
                 let songlist = SongList {
                     id: songinfo.album_id,
-                    name: songinfo.album,
-                    cover_img_url: songinfo.pic_url,
+                    name: songinfo.album.clone(),
+                    cover_img_url: songinfo.pic_url.clone(),
                     author: String::new(),
                 };
                 sender.send_blocking(Action::ToAlbumPage(songlist)).unwrap();
-            } else {
-                sender
-                    .send_blocking(Action::AddToast(gettext("Album not found!")))
-                    .unwrap();
             }
         }
     }
@@ -944,6 +1041,14 @@ impl PlayerControls {
                     "Copied song information to the clipboard!",
                 )))
                 .unwrap();
+        }
+    }
+
+    #[template_callback]
+    fn now_playing_clicked_cb(&self) {
+        if self.get_current_song().is_some() {
+            let sender = self.imp().sender.get().unwrap().clone();
+            sender.send_blocking(Action::ShowNowPlayingView).unwrap();
         }
     }
 }
@@ -996,6 +1101,8 @@ mod imp {
         pub moved_button: TemplateChild<Button>,
         #[template_child(id = "like_button")]
         pub like_button: TemplateChild<Button>,
+        #[template_child(id = "now_playing_button")]
+        pub now_playing_button: TemplateChild<Button>,
 
         pub settings: OnceCell<Settings>,
         pub sender: OnceCell<Sender<Action>>,
@@ -1003,6 +1110,7 @@ mod imp {
         pub player_signal: OnceCell<gstreamer_play::PlaySignalAdapter>,
         pub playlist: Arc<Mutex<PlayList>>,
         pub mpris: OnceCell<Rc<MprisController>>,
+        pub discord_rpc: OnceCell<Rc<DiscordRpcController>>,
         pub debounce: OnceCell<Debounce>,
 
         volume: Cell<f64>,
@@ -1091,6 +1199,9 @@ mod imp {
                         ),
                     );
                 }
+                if let Some(discord_rpc) = self.discord_rpc.get() {
+                    discord_rpc.set_playing(true, self.obj().get_live_position() / 1_000_000);
+                }
             } else {
                 player.pause();
                 button.set_icon_name("media-playback-start-symbolic");
@@ -1109,6 +1220,9 @@ mod imp {
                             }
                         ),
                     );
+                }
+                if let Some(discord_rpc) = self.discord_rpc.get() {
+                    discord_rpc.set_playing(false, self.obj().get_live_position() / 1_000_000);
                 }
             }
         }

@@ -74,6 +74,12 @@ impl NeteaseCloudMusicGtk4Preferences {
             .bind("desktop-lyrics", &desktop_lyrics, "active")
             .flags(SettingsBindFlags::DEFAULT)
             .build();
+
+        let discord_rpc_switch = self.imp().discord_rpc_switch.get();
+        self.settings()
+            .bind("discord-rpc", &discord_rpc_switch, "active")
+            .flags(SettingsBindFlags::DEFAULT)
+            .build();
     }
 
     pub fn set_cache_size_label(&self, size: f64, unit: String) {
@@ -114,6 +120,8 @@ mod imp {
         pub cache_clear: TemplateChild<adw::ComboRow>,
         #[template_child]
         pub desktop_lyrics: TemplateChild<Switch>,
+        #[template_child]
+        pub discord_rpc_switch: TemplateChild<Switch>,
     }
 
     #[glib::object_subclass]

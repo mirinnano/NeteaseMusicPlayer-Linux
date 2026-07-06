@@ -6,6 +6,7 @@
 
 mod discover;
 mod my_page;
+mod now_playing;
 mod player_controls;
 mod playlist_lyrics;
 mod preferences;
@@ -23,6 +24,7 @@ mod user_menus;
 
 pub use discover::*;
 pub use my_page::*;
+pub use now_playing::*;
 pub use player_controls::*;
 pub use playlist_lyrics::*;
 pub use preferences::*;
