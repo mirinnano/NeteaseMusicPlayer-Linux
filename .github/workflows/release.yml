@@ -25,7 +25,7 @@ jobs:
             openssl-devel dbus-devel \
             gettext \
             rust cargo \
-            librest-devel json-glib-devel \
+            json-glib-devel \
             desktop-file-utils \
             glib2-devel
 
