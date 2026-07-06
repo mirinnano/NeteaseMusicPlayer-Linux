@@ -26,7 +26,8 @@ jobs:
             libssl-dev libdbus-1-dev \
             gettext \
             rustc cargo \
-            librest-dev libjson-glib-dev
+            librest-dev libjson-glib-dev \
+            desktop-file-utils
 
       - name: Build
         run: |
